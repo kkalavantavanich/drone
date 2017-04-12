@@ -336,7 +336,7 @@
   #define AUX4PIN                    3 // unused 
     
   #define PCINT_PIN_COUNT            5
-  #define PCINT_RX_BITS              (1<<2),(1<<4),(1<<5),(1<<6),(1<<7)
+  #define PCINT_RX_BITS              (1<<2),(1<<4),(1<<5),(1<<6),(1<<7) // Receiver Pins
   #define PCINT_RX_PORT              PORTD
   #define PCINT_RX_MASK              PCMSK2
   #define PCIR_PORT_BIT              (1<<2)
@@ -361,30 +361,30 @@
   #define SOFT_PWM_4_PIN_HIGH        PORTB |= 1<<4;
   #define SOFT_PWM_4_PIN_LOW         PORTB &= ~(1<<4);
   
-  #define SERVO_1_PINMODE            pinMode(A0,OUTPUT); // TILT_PITCH - WING left
+  #define SERVO_1_PINMODE            pinMode(A0,OUTPUT); // unused
   #define SERVO_1_PIN_HIGH           PORTC |= 1<<0;
   #define SERVO_1_PIN_LOW            PORTC &= ~(1<<0);
-  #define SERVO_2_PINMODE            pinMode(A1,OUTPUT); // TILT_ROLL  - WING right
+  #define SERVO_2_PINMODE            pinMode(A1,OUTPUT); // unused
   #define SERVO_2_PIN_HIGH           PORTC |= 1<<1;
   #define SERVO_2_PIN_LOW            PORTC &= ~(1<<1);
-  #define SERVO_3_PINMODE            pinMode(A2,OUTPUT); // CAM TRIG  - alt TILT_PITCH
+  #define SERVO_3_PINMODE            pinMode(A2,OUTPUT); // unused
   #define SERVO_3_PIN_HIGH           PORTC |= 1<<2;
   #define SERVO_3_PIN_LOW            PORTC &= ~(1<<2);
   #if !defined(MONGOOSE1_0)
-    #define SERVO_4_PINMODE            pinMode(12,OUTPUT); // new       - alt TILT_ROLL
+    #define SERVO_4_PINMODE            pinMode(12,OUTPUT); // Opt.
     #define SERVO_4_PIN_HIGH           PORTB |= 1<<4;
     #define SERVO_4_PIN_LOW            PORTB &= ~(1<<4);
   #endif
-  #define SERVO_5_PINMODE            pinMode(11,OUTPUT); // BI LEFT
+  #define SERVO_5_PINMODE            pinMode(11,OUTPUT); // Motor 1
   #define SERVO_5_PIN_HIGH           PORTB |= 1<<3;
   #define SERVO_5_PIN_LOW            PORTB &= ~(1<<3);
-  #define SERVO_6_PINMODE            pinMode(3,OUTPUT);  // TRI REAR - BI RIGHT
+  #define SERVO_6_PINMODE            pinMode(3,OUTPUT);  // Motor 2
   #define SERVO_6_PIN_HIGH           PORTD|= 1<<3;
   #define SERVO_6_PIN_LOW            PORTD &= ~(1<<3);
-  #define SERVO_7_PINMODE            pinMode(10,OUTPUT); // new
+  #define SERVO_7_PINMODE            pinMode(10,OUTPUT); // Motor 3
   #define SERVO_7_PIN_HIGH           PORTB |= 1<<2;
   #define SERVO_7_PIN_LOW            PORTB &= ~(1<<2);
-  #define SERVO_8_PINMODE            pinMode(9,OUTPUT); // new
+  #define SERVO_8_PINMODE            pinMode(9,OUTPUT); // Motor 4
   #define SERVO_8_PIN_HIGH           PORTB |= 1<<1;
   #define SERVO_8_PIN_LOW            PORTB &= ~(1<<1);
 #endif
