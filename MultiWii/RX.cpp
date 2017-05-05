@@ -11,14 +11,11 @@
 /***************             Global RX related variables           ********************/
 /**************************************************************************************/
 
-#if defined(SPEKTRUM)
-  #include <wiring.c>  //Auto-included by the Arduino core... but we need it sooner. 
-#endif
 
 //RAW RC values will be store here
 #if defined(SBUS)
   volatile uint16_t rcValue[RC_CHANS] = {1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500}; // interval [1000;2000]
-#elif defined(SPEKTRUM) || defined(SERIAL_SUM_PPM)
+#elif defined(SERIAL_SUM_PPM)
   volatile uint16_t rcValue[RC_CHANS] = {1502, 1502, 1502, 1502, 1502, 1502, 1502, 1502, 1502, 1502, 1502, 1502}; // interval [1000; 2000]
 #else
   volatile uint16_t rcValue[RC_CHANS] = {1502, 1502, 1502, 1502, 1502, 1502, 1502, 1502}; // interval [1000;2000]
@@ -31,8 +28,6 @@
   static uint8_t rcChannel[RC_CHANS] = {SBUS};
 #elif defined(SUMD)
   static uint8_t rcChannel[RC_CHANS] = {PITCH,YAW,THROTTLE,ROLL,AUX1,AUX2,AUX3,AUX4};
-#elif defined(SPEKTRUM)
-  static uint8_t rcChannel[RC_CHANS] = {PITCH,YAW,THROTTLE,ROLL,AUX1,AUX2,AUX3,AUX4,8,9,10,11};
 #else // Standard Channel order
   static uint8_t rcChannel[RC_CHANS]  = {ROLLPIN, PITCHPIN, YAWPIN, THROTTLEPIN, AUX1PIN,AUX2PIN,AUX3PIN,AUX4PIN};
   static uint8_t PCInt_RX_Pins[PCINT_PIN_COUNT] = {PCINT_RX_BITS}; // if this slowes the PCINT readings we can switch to a define for each pcint bit
@@ -94,7 +89,7 @@ void configureReceiver() {
   #if defined(SERIAL_SUM_PPM)
     PPM_PIN_INTERRUPT; 
   #endif
-  #if defined (SPEKTRUM) || defined(SUMD)
+  #if defined(SUMD)
     SerialOpen(RX_SERIAL_PORT,115200);
   #endif
   #if defined(SBUS)
@@ -408,47 +403,10 @@ void readSerial_RX(void) {
 /**************************************************************************************/
 /***************          combine and sort the RX Datas            ********************/
 /**************************************************************************************/
-#if defined(SPEKTRUM)
-void readSerial_RX(void) {
-  if ((!f.ARMED) && 
-     #if defined(FAILSAFE) || (RX_SERIAL_PORT != 0) 
-        (failsafeCnt > 5) &&
-     #endif
-      ( SerialPeek(RX_SERIAL_PORT) == '$')) {
-    while (SerialAvailable(RX_SERIAL_PORT)) {
-      serialCom();
-      delay (10);
-    }
-    return;
-  } //End of: Is it the GUI?
-  while (SerialAvailable(RX_SERIAL_PORT) > SPEK_FRAME_SIZE) { // More than a frame?  More bytes implies we weren't called for multiple frame times.  We do not want to process 'old' frames in the buffer.
-    for (uint8_t i = 0; i < SPEK_FRAME_SIZE; i++) {SerialRead(RX_SERIAL_PORT);}  //Toss one full frame of bytes.
-  }  
-  if (spekFrameFlags == 0x01) {   //The interrupt handler saw at least one valid frame start since we were last here. 
-    if (SerialAvailable(RX_SERIAL_PORT) == SPEK_FRAME_SIZE) {  //A complete frame? If not, we'll catch it next time we are called. 
-      SerialRead(RX_SERIAL_PORT); SerialRead(RX_SERIAL_PORT);        //Eat the header bytes 
-      for (uint8_t b = 2; b < SPEK_FRAME_SIZE; b += 2) {
-        uint8_t bh = SerialRead(RX_SERIAL_PORT);
-        uint8_t bl = SerialRead(RX_SERIAL_PORT);
-        uint8_t spekChannel = 0x0F & (bh >> SPEK_CHAN_SHIFT);
-        if (spekChannel < RC_CHANS) rcValue[spekChannel] = 988 + ((((uint16_t)(bh & SPEK_CHAN_MASK) << 8) + bl) SPEK_DATA_SHIFT);
-      }
-      spekFrameFlags = 0x00;
-      spekFrameDone = 0x01;
-      #if defined(FAILSAFE)
-        if(failsafeCnt > 20) failsafeCnt -= 20; else failsafeCnt = 0;   // Valid frame, clear FailSafe counter
-      #endif
-    } else { //Start flag is on, but not enough bytes means there is an incomplete frame in buffer.  This could be OK, if we happened to be called in the middle of a frame.  Or not, if it has been a while since the start flag was set.
-      uint32_t spekInterval = (timer0_overflow_count << 8) * (64 / clockCyclesPerMicrosecond()) - spekTimeLast;
-      if (spekInterval > 2500) {spekFrameFlags = 0;}  //If it has been a while, make the interrupt handler start over. 
-    }
-  }
-}
-#endif
 
 uint16_t readRawRC(uint8_t chan) {
   uint16_t data;
-  #if defined(SPEKTRUM) || defined(SBUS) || defined(SUMD)
+  #if defined(SBUS) || defined(SUMD)
     if (chan < RC_CHANS) {
       data = rcValue[rcChannel[chan]];
     } else data = 1500;
@@ -482,7 +440,7 @@ void computeRC() {
       #if defined(FAILSAFE)
         failsafeGoodCondition = rcDataTmp>FAILSAFE_DETECT_TRESHOLD || chan > 3 || !f.ARMED; // update controls channel only if pulse is above FAILSAFE_DETECT_TRESHOLD
       #endif                                                                                // In disarmed state allow always update for easer configuration.
-      #if defined(SPEKTRUM) || defined(SBUS) || defined(SUMD) // no averaging for Spektrum & SBUS & SUMD signal
+      #if defined(SBUS) || defined(SUMD) // no averaging for SBUS & SUMD signal
         if(failsafeGoodCondition)  rcData[chan] = rcDataTmp;
       #else
         if(failsafeGoodCondition) {
