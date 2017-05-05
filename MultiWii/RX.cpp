@@ -47,7 +47,7 @@ void configureReceiver() {
   /******************    Configure each rc pin for PCINT    ***************************/
   #if defined(STANDARD_RX)
     #if defined(MEGA)
-      DDRK = 0;  // defined PORTK as a digital port ([A8-A15] are consired as digital PINs and not analogical)
+      DDRK = 0;  // defined PORTK as a digital port ([A8-A15] are considered as digital PINs and not analogical)
     #endif
     // PCINT activation
     for(uint8_t i = 0; i < PCINT_PIN_COUNT; i++){ // i think a for loop is ok for the init.
@@ -131,12 +131,19 @@ void configureReceiver() {
       } else edgeTime[pin_pos] = cTime;                              \
     }
 #else
-  /** Checks whether pin has changed and sets cTime & dTime. Called in ISR(RX_PC_INT.). */
+  /** Checks whether pin has changed and sets cTime & dTime. Called in ISR(RX_PC_INT.).
+   *  dTime = difference in time between 900 and 2200 us. Translated into rcValue.
+   *  cTime = current time (us).
+   *
+   *            ______dTime______
+   *  _________|                 |__________
+   *         eTime             cTime
+   */
   #define RX_PIN_CHECK(pin_pos, rc_value_pos)                    \
 if (mask & PCInt_RX_Pins[pin_pos]) {                             \
   if (!(pin & PCInt_RX_Pins[pin_pos])) {                         \
-	dTime = cTime-edgeTime[pin_pos];                             \
-	if (900<dTime && dTime<2200) {                               \
+	dTime = cTime - edgeTime[pin_pos];                           \
+	if (900 < dTime && dTime < 2200) {                           \
 	  rcValue[rc_value_pos] = dTime;                             \
 	}                                                            \
   } else edgeTime[pin_pos] = cTime;                              \
@@ -145,11 +152,11 @@ if (mask & PCInt_RX_Pins[pin_pos]) {                             \
 
   /** Port Change Interrupt. Called every time a change state occurs on an RX input pin. */
   ISR(RX_PC_INTERRUPT) { //this ISR is common to every receiver channel, it is call every time a change state occurs on a RX input pin
-    uint8_t mask;
+    uint8_t mask; // is 1 on pin that have changed
     uint8_t pin;
     uint16_t cTime,dTime; // cTime = actual currentTime, dTime = signal pulse length (differenceTime)
-    static uint16_t edgeTime[8];
-    static uint8_t PCintLast;
+    static uint16_t edgeTime[8]; // time when it last changed
+    static uint8_t PCintLast; // Pin Change Interrupt Last
   #if defined(FAILSAFE) && !defined(PROMICRO)
     static uint8_t GoodPulses;
   #endif
@@ -462,7 +469,9 @@ void computeRC() {
   static uint16_t rcData4Values[RC_CHANS][AVERAGING_ARRAY_LENGTH-1];
   uint16_t rcDataMean,rcDataTmp;
   static uint8_t rc4ValuesIndex = 0;
-  uint8_t chan,a;
+  /** Channel in {}.*/
+  uint8_t chan;
+  uint8_t a;
   uint8_t failsafeGoodCondition = 1;
 
   #if !defined(OPENLRSv2MULTI)
